@@ -7,7 +7,7 @@
 ## Pourquoi cette techno ?
 
 Votre CI teste le **code**. Mais un dev peut casser le **modèle** sans casser
-le code : un preprocessing modifié par erreur, et le F1 passe de 0.71 à 0.55 —
+le code : un preprocessing modifié par erreur, et le F1 passe de 0.61 à 0.45 —
 ça part en prod sans alerte. L'**évaluation continue** comble ce trou : à
 chaque release, on recalcule les métriques modèle sur un **jeu de référence
 figé**, et on **bloque la release** si une métrique passe sous un seuil.
