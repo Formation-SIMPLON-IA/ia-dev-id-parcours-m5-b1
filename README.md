@@ -24,14 +24,14 @@ dans l'ordre, avec le bon appui. Les autres supports ont chacun un rôle précis
 
 | Quand | Tâche | Durée | Appui |
 |---|---|---|---|
-| Mardi 9h15 | 1. Appropriation de la reprise M1 (modèle + API fournis) | 45 min | — |
+| Mardi 9h15 | 1. Appropriation de la reprise M1 (modèle + API fournis) | 30 min | — |
 | Mardi 10h00 | 2. Architecture 3 services (`model` / `backend` / `frontend`) | 1h30 | [`01_Docker_compose`](./ressources/01_Docker_compose_multiservices_essentiel.md) |
-| Mardi 12h00 | 3. Vérification `docker compose up` | 30 min | [`01_Docker_compose`](./ressources/01_Docker_compose_multiservices_essentiel.md) |
+| Mardi 12h15 | 3. Vérification `docker compose up` | 15 min | [`01_Docker_compose`](./ressources/01_Docker_compose_multiservices_essentiel.md) |
 | Mardi 13h30 | 4. Pipeline CI/CD GitHub Actions + *quality gate* | 2h30 | [`03_GitHub_Actions`](./ressources/03_GitHub_Actions_CI_CD_essentiel.md) — appui [`06_Pair_coding`](./ressources/06_Pair_coding_sync_long_essentiel.md) |
 | Mardi 16h45 | 5. Mur réflexif intermédiaire | 15 min | — |
 | Mercredi 9h15 | 6. Endpoint `/metrics` + métriques métier | 30 min | [`02_FastAPI_metrics_Prometheus`](./ressources/02_FastAPI_metrics_Prometheus_essentiel.md) |
 | Mercredi 9h45 | 7. Prometheus + Grafana dans le compose | 30 min | [`02_FastAPI_metrics_Prometheus`](./ressources/02_FastAPI_metrics_Prometheus_essentiel.md) |
-| Mercredi 10h15 | 8. Dashboard Grafana custom (vie / vitesse / qualité) | 45 min | [`04_Grafana_dashboard`](./ressources/04_Grafana_dashboard_custom_essentiel.md) |
+| Mercredi 10h25 | 8. Dashboard Grafana custom (vie / vitesse / comportement) | 40 min | [`04_Grafana_dashboard`](./ressources/04_Grafana_dashboard_custom_essentiel.md) |
 | Mercredi 11h00 | 9. Runbook d'astreinte (4 procédures) | 30 min | [`05_Runbook_astreinte`](./ressources/05_Runbook_astreinte_essentiel.md) |
 | Mercredi 11h30 | 10. **Tour de table binômes** (démo compose + dashboard) | 1h | — |
 | Mercredi 12h30 | 11. Mur réflexif final M5-B1 | 30 min | — |
@@ -53,11 +53,13 @@ Vous repartez **chacun·e** du repo binôme, dans une branche perso
 
 **M5-B1 — avant mercredi 12h30**
 
-- [ ] `docker compose up --build` démarre les **3 services** en < 60 s, healthchecks verts
+- [ ] `docker compose up --build` démarre les **3 services** de façon **reproductible**, healthchecks verts
 - [ ] `/metrics` exposé côté `model` **et** `backend`
-- [ ] Dashboard Grafana provisionné **automatiquement** (3 panels : vie / vitesse / qualité)
+- [ ] Dashboard Grafana provisionné **automatiquement** (3 panels : vie / vitesse / comportement)
 - [ ] Workflow CI **vert**, image poussée sur GHCR, tag `v1.0.0-prod`
 - [ ] Le **contract test** du modèle bloque la release s'il est rouge
+      *(il vérifie le **contrat technique** de l'API — pas la performance du
+      modèle : ça, c'est l'évaluation continue de B2)*
 - [ ] `runbook.md` — 4 procédures (Service KO / Latence / Métrique modèle / Rollback)
 - [ ] `README.md` — schéma Mermaid de l'archi + démarrage en 3 commandes
 - [ ] Commits binôme : `Co-authored-by:` ou auteurs nominatifs
@@ -66,7 +68,8 @@ Vous repartez **chacun·e** du repo binôme, dans une branche perso
 
 - [ ] `scripts/evaluate_model.py` idempotent, sortie JSON parsable
 - [ ] `data/reference_set.csv` versionné
-- [ ] ≥ 2 runs MLflow comparables, visibles dans `mlflow ui`
+- [ ] ≥ 2 runs MLflow comparables + **une preuve** (artefact CI `mlruns` ou
+      capture de `mlflow ui`) — ⚠️ `mlruns/` est gitignoré, **ne le commitez pas**
 - [ ] `evaluation_thresholds.md` — 4 métriques × baseline / seuil / justification
 - [ ] Étape CI `evaluate-model` **rouge sur dégradation volontaire** (testé une fois)
 - [ ] `tests/test_evaluation.py` — 3 tests minimum, `pytest -v` vert

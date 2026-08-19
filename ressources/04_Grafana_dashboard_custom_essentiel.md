@@ -10,7 +10,9 @@ Prometheus stocke des métriques mais ne les **montre** pas joliment. Grafana
 est l'outil de visualisation : il interroge Prometheus (PromQL) et affiche des
 **panels** (courbes, jauges). On vous demande un dashboard qui réponde aux 3
 questions de Sophie Léger : **vie** (RPS, erreurs), **vitesse** (latence
-p50/p95/p99), **qualité** (distribution des prédictions).
+p50/p95/p99), **comportement** (distribution des prédictions — ce que le
+modèle prédit *actuellement*, pas s'il prédit *bien* : sans les vraies
+réponses on ne mesure pas la performance, c'est le rôle de M5-B2).
 
 Point pro central : ne **pas** importer un dashboard tout fait (le fameux
 `1860`) — vous **construisez le vôtre**, adapté à VOS métriques métier. Et vous
@@ -102,7 +104,7 @@ Ajoutez le panel **Qualité** (distribution des classes prédites) :
 ## Vérification (checklist apprenant)
 
 - [ ] Mon dashboard apparaît **automatiquement** (provisionné, pas importé).
-- [ ] J'ai 3 panels : vie, vitesse, qualité.
+- [ ] J'ai 3 panels : vie, vitesse, comportement.
 - [ ] La latence utilise `histogram_quantile(..._bucket, by le)`.
 - [ ] Le JSON du dashboard est **versionné** dans le repo.
 - [ ] Je sais pourquoi on évite le dashboard 1860 ici.
