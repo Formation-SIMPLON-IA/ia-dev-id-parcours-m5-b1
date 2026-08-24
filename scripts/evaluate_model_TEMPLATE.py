@@ -9,10 +9,20 @@ Mini-cours : `07_MLflow_tracking_essentiel.md` + `08_Evaluation_continue_seuils`
 
 Usage cible::
 
+    python scripts/evaluate_model.py --freeze-baseline             # une fois, au gel du jeu
     python scripts/evaluate_model.py --release-tag v2.0.0
     python scripts/evaluate_model.py --release-tag bad --degrade   # test du rouge
     mlflow ui    # comparer les runs
+
+⚠️ **Le piège central du brief.** La tentation est de comparer vos métriques à
+la baseline holdout annoncée en M1 (`metrics_holdout` dans le `.json`). Ne le
+faites pas : le holdout et votre jeu de référence n'ont ni la même taille ni la
+même composition. Vous mesureriez l'écart entre **deux populations**, pas la
+dégradation du **modèle** — et votre garde-fou se déclencherait tout seul.
+La baseline du garde-fou, c'est le **golden run** : les métriques mesurées sur
+**votre** jeu de référence, au moment où vous le gelez.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -27,9 +37,14 @@ import pandas as pd
 ROOT = Path(__file__).parent.parent
 MODELS_DIR = ROOT / "services" / "model" / "models"
 REFERENCE_SET = ROOT / "data" / "reference_set.csv"
+REFERENCE_BASELINE = ROOT / "data" / "reference_baseline.json"
 
 # TODO 1 — définir vos seuils (stratégie absolu / relatif / hybride).
 #   Documentez-les ET justifiez-les dans evaluation_thresholds.md.
+#   ⚠️ Une tolérance relative n'a de sens que si elle est **plus grande que le
+#   bruit de mesure** de votre jeu de référence. Mesurez ce bruit (bootstrap,
+#   cf. mini-cours 08) et prenez au moins 2 σ. Sous le bruit, le garde-fou se
+#   déclenche sur du hasard et vous perdez confiance en lui.
 THRESHOLDS: dict[str, dict[str, float]] = {
     # "f1_macro": {"absolute_min": ..., "max_drop_vs_baseline": ...},
 }
@@ -49,15 +64,38 @@ def check_thresholds(metrics: dict[str, float], baseline: dict) -> list[str]:
     raise NotImplementedError
 
 
+def load_baseline() -> dict:
+    """Charge le golden run (baseline mesurée sur le jeu de référence)."""
+    # TODO 3bis — lire REFERENCE_BASELINE et renvoyer ses métriques.
+    #   Si le fichier n'existe pas : lever une erreur explicite qui dit de
+    #   lancer `--freeze-baseline`. Surtout **pas** de repli silencieux sur
+    #   `meta["metrics_holdout"]` : ce serait comparer deux populations.
+    raise NotImplementedError
+
+
+def freeze_baseline(model, df: pd.DataFrame, meta: dict) -> dict:
+    """Mesure et gèle le golden run sur le jeu de référence."""
+    # TODO 3ter — calculer les métriques sur le jeu de référence et les écrire
+    #   dans REFERENCE_BASELINE (avec model_version, reference_set,
+    #   n_reference). Ce fichier est **versionné** : c'est lui qui arbitre les
+    #   releases. À regeler seulement si le jeu OU le modèle de référence change.
+    raise NotImplementedError
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--release-tag", default="dev")
     parser.add_argument("--degrade", action="store_true")
+    parser.add_argument("--freeze-baseline", action="store_true")
     args = parser.parse_args()
 
     model = joblib.load(MODELS_DIR / "pyrenex_risk_v2.joblib")
     meta = json.loads((MODELS_DIR / "pyrenex_risk_v2.json").read_text(encoding="utf-8"))
     df = pd.read_csv(REFERENCE_SET)
+
+    if args.freeze_baseline:
+        print(json.dumps(freeze_baseline(model, df, meta), indent=2))
+        return 0
 
     if args.degrade:
         # TODO 4 — simuler un bug de preprocessing réaliste (ex. désaligner
@@ -65,7 +103,7 @@ def main() -> int:
         pass
 
     metrics = compute_metrics(model, df, meta)
-    baseline = meta.get("metrics_holdout", {})
+    baseline = load_baseline()  # ← le golden run, PAS metrics_holdout
     violations = check_thresholds(metrics, baseline)
 
     # --- Bloc MLflow PRÉ-CÂBLÉ — complétez params + metrics ------------------
@@ -78,7 +116,7 @@ def main() -> int:
                 # TODO 5 — ajouter reference_set, n_reference…
             }
         )
-        mlflow.log_metrics(metrics)              # ← les 4 métriques tracées
+        mlflow.log_metrics(metrics)  # ← les 4 métriques tracées
         mlflow.set_tag("release_blocked", str(bool(violations)))
     # ------------------------------------------------------------------------
 

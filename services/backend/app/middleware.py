@@ -1,4 +1,4 @@
-"""Logging middleware with request_id and latency tracking — SOLUTION."""
+"""Logging middleware with request_id and latency tracking — fourni."""
 from __future__ import annotations
 
 import time

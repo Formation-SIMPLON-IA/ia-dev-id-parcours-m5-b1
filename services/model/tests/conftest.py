@@ -1,4 +1,4 @@
-"""Fixtures pytest — service model (SOLUTION).
+"""Fixtures pytest — service model (fourni).
 
 Ajoute la racine du service au sys.path pour que `from app.main import app`
 fonctionne quand pytest est lancé depuis la racine du repo

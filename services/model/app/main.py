@@ -1,4 +1,4 @@
-"""Service `model` — API de scoring Pyrenex (SOLUTION M5-B1).
+"""Service `model` — API de scoring Pyrenex (fourni — votre exemple de référence).
 
 Reprise de l'API M1-B2 (routes `/health`, `/info`, `/predict`) + ajout de
 l'endpoint `/metrics` Prometheus (latence/RPS/erreurs via instrumentator +

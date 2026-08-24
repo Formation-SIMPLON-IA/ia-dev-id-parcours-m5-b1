@@ -30,6 +30,25 @@ automatiquement au démarrage (pas de clic manuel à reproduire).
   « charge les JSON de ce dossier ») + le **JSON du dashboard** lui-même.
 - **`uid`** : identifiant stable du dashboard / de la datasource — pour que les
   panels référencent la datasource de façon reproductible.
+- **`up`** : la métrique que **Prometheus fabrique lui-même** pour chaque cible
+  scrapée — `1` si le scrape a réussi, `0` sinon. C'est la seule qui répond
+  vraiment à *« est-il en vie ? »*, parce qu'elle ne vient **pas** du service.
+  Quand un conteneur meurt, il n'expose plus rien : ses compteurs ne montent
+  pas, ils **se figent**. Un dashboard qui ne surveille que le taux d'erreur ne
+  voit donc **pas** la panne. Ajoutez toujours un panneau `up{job=~"..."}`.
+
+## La panne muette — à faire une fois pour le croire
+
+Coupez le service model (`docker compose stop model`) et envoyez 3 requêtes :
+elles renvoient bien des 503, et pourtant le panneau « erreurs 5xx » affiche
+**0**. Deux raisons cumulées :
+
+1. une série de compteur qui **apparaît pour la première fois** ne produit pas
+   de `rate()` — il faut au moins deux points de mesure ;
+2. le service mort ne publie plus rien du tout.
+
+Seul `up{job="model"}` bascule à 0. C'est la démonstration que **« pas
+d'erreurs affichées » ≠ « tout va bien »**.
 
 ## Exemple minimal qui tourne
 
@@ -87,6 +106,8 @@ Ajoutez le panel **Qualité** (distribution des classes prédites) :
 | `uid` de datasource non fixé | Les panels pointent dans le vide après provisioning |
 | Lire un Counter sans `rate()` | Courbe qui monte indéfiniment, illisible |
 | Mauvais nom de métrique dans `expr` | Panel « No data » |
+| Dashboard « Vie » sans panneau `up` | La panne d'un service ne se voit **pas** : ses compteurs se figent au lieu de monter |
+| `sum(rate(...))` sans `or vector(0)` | « No data » quand il n'y a aucune erreur — indistinguable d'un panneau cassé |
 
 | Symptôme | Cause probable |
 |---|---|
@@ -94,6 +115,7 @@ Ajoutez le panel **Qualité** (distribution des classes prédites) :
 | Panel « No data » | Métrique pas encore générée (envoyez du trafic) ou nom faux |
 | « Datasource not found » | `uid` du panel ≠ `uid` de la datasource provisionnée |
 | Latence plate à 0 | `_bucket` ou `by (le)` manquant dans `histogram_quantile` |
+| Un service est tombé mais rien ne bouge sur le dashboard | Pas de panneau `up` : on mesure le trafic, pas la vie |
 
 ## Pour aller plus loin
 

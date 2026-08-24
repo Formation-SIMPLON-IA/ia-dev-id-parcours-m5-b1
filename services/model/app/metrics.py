@@ -1,4 +1,4 @@
-"""Métriques métier Prometheus — service model (SOLUTION M5-B1).
+"""Métriques métier Prometheus — service model (fourni — votre exemple de référence).
 
 En plus des métriques HTTP standard exposées par
 ``prometheus-fastapi-instrumentator`` (latence, RPS, codes retour), on

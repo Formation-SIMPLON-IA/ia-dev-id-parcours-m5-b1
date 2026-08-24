@@ -1,4 +1,4 @@
-"""Pydantic schemas for the Pyrenex Risk API — SOLUTION.
+"""Pydantic schemas for the Pyrenex Risk API — fourni.
 
 Aligned with feature_columns from pyrenex_risk_v2.json (M1-B1 correctif).
 """

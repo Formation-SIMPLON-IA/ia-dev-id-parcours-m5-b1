@@ -1,4 +1,4 @@
-"""Tests API + contract test du modèle — service model (SOLUTION)."""
+"""Tests API + contract test du modèle — service model (fourni)."""
 from __future__ import annotations
 
 import json

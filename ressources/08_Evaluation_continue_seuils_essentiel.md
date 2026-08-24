@@ -21,16 +21,52 @@ globales, branchés dans la CI via un **code retour non-zéro**.
 - **Jeu de référence (`reference_set.csv`)** : un sous-échantillon **figé** du
   holdout, versionné. Figé = comparable d'une release à l'autre. On le regénère
   seulement si la population change (et on le documente).
-- **Baseline** : la performance annoncée au client (métriques holdout M1). Les
-  seuils se définissent **par rapport** à elle.
+- **Deux baselines, à ne pas confondre.** La **baseline communiquée** est ce
+  qu'on a annoncé au client (métriques du holdout M1 complet). Le **golden
+  run** est la mesure faite sur **votre** jeu de référence, au moment où vous
+  le gelez. Le garde-fou compare au **golden run** — jamais à la baseline
+  communiquée. Les deux jeux n'ont ni la même taille ni la même composition :
+  l'écart entre eux mesure une **différence de population**, pas une
+  dégradation du modèle.
 - **Stratégies de seuil** : **absolu** (« F1 ≥ 0.55 quoi qu'il arrive »),
-  **relatif** (« pas plus de 3 pts sous la baseline »), **hybride** (les deux).
+  **relatif** (« pas plus de 5 pts sous le golden run »), **hybride** (les deux).
   L'hybride est le plus robuste.
+- **Bruit de mesure** : un jeu de référence est un échantillon, donc ses
+  métriques ont une incertitude. Un seuil relatif **plus petit que ce bruit**
+  se déclenche tout seul. On le mesure par **bootstrap** et on prend au moins
+  **2 σ** (cf. plus bas).
 - **Code retour** : le script sort `0` si OK, **`1` si violation**. GitHub
   Actions interprète `exit 1` comme un échec → release bloquée. Un `print` ne
   bloque rien.
 - **Idempotence** : `random_state` fixé partout → 2 exécutions donnent le même
-  résultat (sinon les seuils sont du bruit).
+  résultat. Attention : l'idempotence dit que la mesure ne bouge pas d'un run à
+  l'autre. Elle ne dit **rien** sur le bruit d'échantillonnage du jeu — ce sont
+  deux problèmes différents.
+
+## Dimensionner la tolérance : le bootstrap en 10 lignes
+
+```python
+import numpy as np, pandas as pd
+from sklearn.metrics import roc_auc_score
+
+rng = np.random.default_rng(42)
+y, proba = y_ref.to_numpy(), model.predict_proba(X_ref)[:, 1]
+scores = [roc_auc_score(y[i], proba[i])
+          for i in (rng.integers(0, len(y), len(y)) for _ in range(500))]
+sigma = np.std(scores)
+print(f"sigma = {sigma:.4f}  ->  tolerance mini = {2 * sigma:.3f}")
+```
+
+On retire un échantillon de même taille, avec remise, 500 fois : la dispersion
+obtenue **est** l'incertitude de la mesure. Sur 500 lignes, comptez un σ de
+l'ordre de 0.02-0.03 sur le ROC-AUC — donc une tolérance relative de 0.03 est
+**sous le bruit**, et bloquera des releases parfaitement saines.
+
+> 💡 Conséquence de conception : sur la classe rare, le bruit vient du **nombre
+> de positifs**, pas du nombre de lignes. Sur-représenter la classe coûteuse
+> dans un jeu d'**évaluation** (par ex. 250/250 au lieu de 408/92) divise
+> presque par deux le σ du recall. Un jeu de référence n'est pas un échantillon
+> de production : c'est un instrument de mesure, on le conçoit pour être stable.
 
 ## Exemple minimal qui tourne
 
@@ -58,7 +94,11 @@ sys.exit(1 if violations else 0)   # ← bloque la CI
 ## Exercice guidé
 
 Prouvez que le garde-fou marche :
-1. Lancez votre `evaluate_model.py --release-tag ok` → doit sortir **exit 0**.
+0. Gelez le golden run : `evaluate_model.py --freeze-baseline` → commitez
+   `data/reference_baseline.json`.
+1. Lancez votre `evaluate_model.py --release-tag ok` → doit sortir **exit 0**,
+   avec des écarts **exactement nuls** vs le golden run. Si ce n'est pas le cas
+   sur un modèle inchangé, votre baseline n'est pas la bonne.
 2. Ajoutez un mode `--degrade` qui **désaligne X et y** (ou casse une feature)
    → relancez → doit lister des violations et sortir **exit 1**.
 3. Branchez l'étape `evaluate-model` dans `ci.yml` (`needs: test`) et poussez
@@ -73,12 +113,16 @@ Prouvez que le garde-fou marche :
 | Reference_set non figé (regénéré à chaque run) | Métriques non comparables, seuils inutiles |
 | `random_state` oublié | Résultats non idempotents, faux positifs/négatifs |
 | Jamais tester le chemin rouge | On découvre en prod que le garde-fou ne bloque pas |
+| **Comparer au holdout M1 au lieu du golden run** | Le garde-fou mesure un écart de population et bloque des releases saines |
+| **Tolérance relative sous le bruit du jeu** | Rouge aléatoire ; l'équipe finit par désactiver le garde-fou |
+| Jeu de référence changé sans regeler le golden run | Même effet : on compare deux populations |
 
 | Symptôme | Cause probable |
 |---|---|
 | La CI reste verte malgré une dégradation | Script ne renvoie pas `exit 1`, ou étape pas branchée |
 | Résultats différents à chaque run | `random_state` non fixé / reference_set instable |
-| Seuil contesté en revue | Pas de justification chiffrée vs baseline |
+| Seuil contesté en revue | Pas de justification chiffrée vs golden run |
+| **Rouge alors que rien n'a été touché** | Baseline mesurée sur une autre population, ou tolérance < bruit |
 
 ## Pour aller plus loin
 
@@ -89,7 +133,10 @@ Prouvez que le garde-fou marche :
 ## Vérification (checklist apprenant)
 
 - [ ] Mon `reference_set.csv` est figé et versionné.
-- [ ] Chaque seuil est **justifié** par rapport à la baseline.
+- [ ] Mon golden run est gelé dans `data/reference_baseline.json` et versionné.
+- [ ] Sur un modèle inchangé, l'écart au golden run est **nul** (pas « petit »).
+- [ ] J'ai mesuré le σ de mon jeu et ma tolérance relative est ≥ 2 σ.
+- [ ] Chaque seuil est **justifié** par rapport au golden run.
 - [ ] Le script sort **exit 1** sur dégradation (testé au moins une fois).
 - [ ] L'étape `evaluate-model` bloque réellement la release en CI.
 - [ ] Mes résultats sont idempotents (`random_state` fixé).

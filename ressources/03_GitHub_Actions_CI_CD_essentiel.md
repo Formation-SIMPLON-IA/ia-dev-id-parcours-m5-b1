@@ -64,10 +64,26 @@ Ajoutez le **push GHCR** au job `build` :
 1. Login : `docker/login-action@v3` avec `registry: ghcr.io`,
    `username: ${{ github.actor }}`, `password: ${{ secrets.GITHUB_TOKEN }}`.
 2. `permissions: { packages: write }` sur le job.
-3. Tag + push de l'image model vers `ghcr.io/${{ github.repository }}-model`.
+3. Tag + push de l'image model vers `ghcr.io/<votre-repo-en-minuscules>-model`.
+
+⚠️ Deux pièges vous attendent ici, et ils ne se voient qu'au moment du push :
+
+- **GHCR n'accepte que des noms d'image en minuscules.** Votre repo s'appelle
+  `Formation-SIMPLON-IA/M5-B1-pyrenex-prod-<binôme>` : tel quel, `docker tag`
+  refuse avec *« repository name must be lowercase »*. Il faut abaisser la casse.
+- **`docker compose images -q model` renvoie une chaîne vide** après un simple
+  `docker compose build` : cette commande ne liste que les images des conteneurs
+  **créés**, pas celles qui viennent d'être construites. Le `docker tag` casse
+  alors sur un argument vide.
 
 <details><summary>Indice</summary>
-`docker tag $(docker compose images -q model) $IMG:$TAG && docker push $IMG:$TAG`
+
+```bash
+IMG="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')-model"
+TAG="${GITHUB_REF_NAME//\//-}"          # une branche `feature/ci` n'est pas un tag valide
+docker build -t "$IMG:$TAG" ./services/model
+docker push "$IMG:$TAG"
+```
 </details>
 
 ## Pièges fréquents
@@ -79,6 +95,8 @@ Ajoutez le **push GHCR** au job `build` :
 | Oublier `permissions: packages: write` | `denied: permission_denied` au push GHCR |
 | Chemin de tests faux (`pytest tests` au mauvais endroit) | Le job passe en testant... rien |
 | Workflow pas dans `.github/workflows/` | GitHub ne le détecte pas |
+| Nom d'image GHCR avec des majuscules | `docker tag` refuse : *repository name must be lowercase* |
+| `docker compose images -q` après un simple `build` | Renvoie du vide → `docker tag` casse sur un argument manquant |
 
 | Symptôme | Cause probable |
 |---|---|
@@ -86,6 +104,7 @@ Ajoutez le **push GHCR** au job `build` :
 | `denied` au push d'image | `permissions: packages: write` manquant ou login raté |
 | `build` tourne malgré des tests rouges | `needs:` oublié |
 | `pytest` « passe » mais ne teste rien | Mauvais répertoire de tests, 0 test collecté |
+| `invalid reference format` au `docker tag` | Majuscules dans le nom d'image, ou variable vide |
 
 ## Pour aller plus loin
 

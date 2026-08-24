@@ -28,3 +28,13 @@ jobs:
   # TODO 2 — job `build-and-push` :
   #   needs: [test, evaluate-model] ; if: push ; login GHCR ;
   #   `docker compose build` ; tag + push de l'image model ; tag de release.
+  #
+  #   Deux pièges qui vous coûteront la fin de journée si vous les ignorez :
+  #   a) GHCR n'accepte QUE des noms d'image en **minuscules**. Votre repo
+  #      s'appelle `Formation-SIMPLON-IA/M5-B1-...` → passez le nom dans
+  #      `tr '[:upper:]' '[:lower:]'` avant le `docker tag`, sinon :
+  #      « invalid reference format: repository name must be lowercase ».
+  #   b) `docker compose images -q model` ne liste que les images des
+  #      conteneurs **créés**. Après un simple `docker compose build`, elle
+  #      renvoie une chaîne vide et le `docker tag` casse. Buildez l'image à
+  #      pousser avec `docker build -t "$IMG:$TAG" ./services/model`.

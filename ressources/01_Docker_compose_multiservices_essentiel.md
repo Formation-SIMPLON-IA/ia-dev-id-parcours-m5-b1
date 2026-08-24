@@ -71,8 +71,11 @@ docker compose down             # arrêt + nettoyage réseau
 Ajoutez le service `frontend` (nginx) à l'exemple ci-dessus :
 1. `build: ./services/frontend`, port hôte **8088** → conteneur **80**.
 2. `depends_on: backend` avec `condition: service_healthy`.
-3. Relancez `docker compose up --build` et vérifiez `docker compose ps` :
-   `frontend` doit démarrer **après** que `backend` soit `healthy`.
+3. **Son propre healthcheck** — le critère du brief est « les **3** services
+   `healthy` ». Un service sans healthcheck reste éternellement sans état.
+4. Relancez `docker compose up --build` et vérifiez `docker compose ps` :
+   `frontend` doit démarrer **après** que `backend` soit `healthy`, puis passer
+   `healthy` à son tour.
 
 <details><summary>Solution attendue</summary>
 
@@ -80,6 +83,14 @@ Ajoutez le service `frontend` (nginx) à l'exemple ci-dessus :
   frontend:
     build: ./services/frontend
     ports: ["8088:80"]
+    healthcheck:
+      # 127.0.0.1 et NON `localhost` : `listen 80;` ne bind que l'IPv4, or
+      # `localhost` résout ::1 en premier dans l'image nginx → refused.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
     depends_on:
       backend:
         condition: service_healthy
@@ -102,6 +113,8 @@ Ajoutez le service `frontend` (nginx) à l'exemple ci-dessus :
 | `Connection refused` vers un autre service | `localhost` au lieu du nom de service |
 | `port is already allocated` | Un autre process (ou une autre stack) occupe le port hôte |
 | Le service reste `health: starting` puis `unhealthy` | Commande de healthcheck fausse, ou app pas encore prête (start_period trop court) |
+| `frontend` `unhealthy` alors que la page s'ouvre dans le navigateur | La sonde interroge `localhost` (→ ::1) alors que nginx n'écoute qu'en IPv4 : utiliser `127.0.0.1` |
+| Un service n'affiche aucun état de santé | Il n'a pas de `healthcheck` — « pas de healthcheck » ≠ « healthy » |
 | Changements de code ignorés | Image pas reconstruite (`--build` oublié) |
 
 ## Pour aller plus loin
