@@ -27,14 +27,15 @@ dans l'ordre, avec le bon appui. Les autres supports ont chacun un rôle précis
 | Mardi 9h15 | 1. Appropriation de la reprise M1 (modèle + API fournis) | 30 min | — |
 | Mardi 10h00 | 2. Architecture 3 services (`model` / `backend` / `frontend`) | 1h30 | [`01_Docker_compose`](./ressources/01_Docker_compose_multiservices_essentiel.md) |
 | Mardi 12h15 | 3. Vérification `docker compose up` | 15 min | [`01_Docker_compose`](./ressources/01_Docker_compose_multiservices_essentiel.md) |
-| Mardi 13h30 | 4. Pipeline CI/CD GitHub Actions + *quality gate* | 2h30 | [`03_GitHub_Actions`](./ressources/03_GitHub_Actions_CI_CD_essentiel.md) — appui [`06_Pair_coding`](./ressources/06_Pair_coding_sync_long_essentiel.md) |
-| Mardi 16h45 | 5. Mur réflexif intermédiaire | 15 min | — |
-| Mercredi 9h15 | 6. Endpoint `/metrics` + métriques métier | 30 min | [`02_FastAPI_metrics_Prometheus`](./ressources/02_FastAPI_metrics_Prometheus_essentiel.md) |
-| Mercredi 9h45 | 7. Prometheus + Grafana dans le compose | 30 min | [`02_FastAPI_metrics_Prometheus`](./ressources/02_FastAPI_metrics_Prometheus_essentiel.md) |
-| Mercredi 10h25 | 8. Dashboard Grafana custom (vie / vitesse / comportement) | 40 min | [`04_Grafana_dashboard`](./ressources/04_Grafana_dashboard_custom_essentiel.md) |
-| Mercredi 11h00 | 9. Runbook d'astreinte (4 procédures) | 30 min | [`05_Runbook_astreinte`](./ressources/05_Runbook_astreinte_essentiel.md) |
-| Mercredi 11h30 | 10. **Tour de table binômes** (démo compose + dashboard) | 1h | — |
-| Mercredi 12h30 | 11. Mur réflexif final M5-B1 | 30 min | — |
+| Mardi 12h30 | 4. 🍽️ Déjeuner | 1h | — |
+| Mardi 13h30 | 5. Pipeline CI/CD GitHub Actions + *quality gate* | 2h30 | [`03_GitHub_Actions`](./ressources/03_GitHub_Actions_CI_CD_essentiel.md) — appui [`06_Pair_coding`](./ressources/06_Pair_coding_sync_long_essentiel.md) |
+| Mardi 16h45 | 6. Mur réflexif intermédiaire | 15 min | — |
+| Mercredi 9h15 | 7. Endpoint `/metrics` + métriques métier | 30 min | [`02_FastAPI_metrics_Prometheus`](./ressources/02_FastAPI_metrics_Prometheus_essentiel.md) |
+| Mercredi 9h45 | 8. Prometheus + Grafana dans le compose | 30 min | [`02_FastAPI_metrics_Prometheus`](./ressources/02_FastAPI_metrics_Prometheus_essentiel.md) |
+| Mercredi 10h25 | 9. Dashboard Grafana custom (vie / vitesse / comportement) | 40 min | [`04_Grafana_dashboard`](./ressources/04_Grafana_dashboard_custom_essentiel.md) |
+| Mercredi 11h00 | 10. Runbook d'astreinte (4 procédures) | 30 min | [`05_Runbook_astreinte`](./ressources/05_Runbook_astreinte_essentiel.md) |
+| Mercredi 11h30 | 11. **Tour de table binômes** (démo compose + dashboard) | 1h | — |
+| Mercredi 12h30 | 12. Mur réflexif final M5-B1 | 30 min | — |
 
 ### M5-B2 — l'async individuel (jeudi + vendredi matin, 6 h)
 
@@ -121,7 +122,7 @@ services/
 prometheus/     # FOURNI — scrape config
 grafana/provisioning/
   datasources/  # FOURNI — datasource Prometheus
-  dashboards/   # provider fourni ; le dashboard JSON = à vous (tâche 8)
+  dashboards/   # provider fourni ; le dashboard JSON = à vous (tâche 9)
 .github/workflows/ci.yml   # squelette (job test fourni)
 runbook.md                 # template 4 sections
 scripts/evaluate_model_TEMPLATE.py   # B2 — MLflow pré-câblé
